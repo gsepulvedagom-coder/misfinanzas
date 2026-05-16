@@ -50,9 +50,13 @@ input:focus,select:focus{outline:2px solid #1a1a1a;outline-offset:1px}
 .empty{text-align:center;padding:2rem;color:#9ca3af;font-size:13px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
 .chart-wrap{position:relative;width:100%}
-.pres-row{display:grid;grid-template-columns:1fr 100px 100px 80px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:13px}
+.pres-row{padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:13px}
 .pres-row:last-child{border-bottom:none}
-.pres-hdr{font-size:11px;color:#6b7280;font-weight:500}
+.pres-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.pres-row-cat{font-weight:500;font-size:13px}
+.pres-row-diff{font-weight:600;font-size:13px}
+.pres-row-sub{display:flex;gap:16px;font-size:12px;color:#6b7280}
+.pres-hdr{display:none}
 .over{color:#A32D2D}.under{color:#1D6A39}
 .tab-btns{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
 .tab-btn{padding:6px 14px;border:1px solid #d1d5db;background:none;border-radius:20px;cursor:pointer;font-size:12px;color:#6b7280;font-family:inherit}
@@ -75,6 +79,23 @@ input:focus,select:focus{outline:2px solid #1a1a1a;outline-offset:1px}
 .cal-day.today{font-weight:700;color:#1A5276}
 .cal-day.selected{background:#1a1a1a;color:#fff}
 .cal-day.empty{cursor:default}
+
+@media(max-width:480px){
+  body{padding:.75rem}
+  .metric-grid{grid-template-columns:1fr 1fr}
+  .metric-value{font-size:18px}
+  .form-row{grid-template-columns:1fr}
+  .table th:nth-child(3),.table td:nth-child(3),
+  .table th:nth-child(4),.table td:nth-child(4){display:none}
+  .nav-btn{padding:8px 9px;font-size:11px}
+  .card{padding:1rem}
+  .pres-edit-row{grid-template-columns:1fr 110px!important}
+  .section-header{flex-wrap:wrap;gap:8px}
+  .tab-btns{gap:4px}
+  .tab-btn{padding:5px 10px;font-size:11px}
+  .cal-popup{width:calc(100vw - 3rem);left:0}
+  .pres-row-sub{flex-direction:column;gap:2px}
+}
 </style>
 </head>
 <body>
@@ -141,7 +162,7 @@ input:focus,select:focus{outline:2px solid #1a1a1a;outline-offset:1px}
     <div class="month-sel"><label style="margin:0">Mes:</label><select id="pres-month" onchange="renderPres()"></select></div>
     <div class="card">
       <div class="card-title">Presupuesto vs gasto real</div>
-      <div class="pres-row pres-hdr"><span>Categoría</span><span>Presupuesto</span><span>Real</span><span>Diferencia</span></div>
+
       <div id="pres-body"></div>
     </div>
     <div class="card">
@@ -370,7 +391,10 @@ function renderPres(){
   const pres=loadObj('presupuesto',{});const monthPres=pres[month]||{};
   const txs=getTx(month).filter(t=>t.tipo==='gasto');
   document.getElementById('pres-body').innerHTML=CATS.map(cat=>{const budget=monthPres[cat]||0;const real=txs.filter(t=>t.categoria===cat).reduce((a,t)=>a+t.monto,0);const diff=budget-real;const pct=budget>0?Math.min(100,Math.round(real/budget*100)):0;
-    return `<div class="pres-row"><span>${cat}</span><span>${fmt(budget)}</span><span>${fmt(real)}</span><span class="${diff<0?'over':'under'}">${diff>=0?'+':''}${fmt(diff)}</span></div>${budget>0?`<div style="padding:0 0 10px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>100?'#A32D2D':'#1D6A39'}"></div></div></div>`:''}`; }).join('');
+    const diffStr=`${diff>=0?'+':''}${fmt(diff)}`;
+    const diffCls=diff<0?'over':'under';
+    const bar=budget>0?`<div style="margin-top:6px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>100?'#A32D2D':'#1D6A39'}"></div></div></div>`:'';
+    return `<div class="pres-row"><div class="pres-row-top"><span class="pres-row-cat">${cat}</span><span class="pres-row-diff ${diffCls}">${diffStr}</span></div><div class="pres-row-sub"><span>Presupuesto: <strong>${fmt(budget)}</strong></span><span>Real: <strong>${fmt(real)}</strong></span></div>${bar}</div>`; }).join('');
   document.getElementById('pres-edit').innerHTML=CATS.map(cat=>`<div style="display:grid;grid-template-columns:1fr 140px;gap:8px;align-items:center;margin-bottom:8px"><label style="margin:0;font-size:13px">${cat}</label><input type="number" id="pres_${cat.replace(/[\s/]/g,'_')}" value="${monthPres[cat]||''}" placeholder="0" style="text-align:right"></div>`).join('');
 }
 function savePres(){const month=document.getElementById('pres-month').value;const pres=loadObj('presupuesto',{});pres[month]={};CATS.forEach(cat=>{const val=parseFloat(document.getElementById('pres_'+cat.replace(/[\s/]/g,'_')).value)||0;if(val>0)pres[month][cat]=val;});saveObj('presupuesto',pres);renderPres();}
