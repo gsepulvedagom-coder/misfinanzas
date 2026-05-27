@@ -89,10 +89,7 @@ input:focus,select:focus{outline:2px solid #1a1a1a;outline-offset:1px}
 /* Mes cerrado badge */
 .closed-badge{display:inline-flex;align-items:center;gap:4px;background:#FEF3C7;color:#92400e;border:1px solid #fcd34d;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;margin-left:8px}
 /* Action menu */
-.action-menu{position:relative;display:inline-block}
-.action-menu-popup{display:none;position:fixed;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:500;min-width:140px;overflow:hidden}
-.action-menu-popup.open{display:block}
-.action-menu-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;color:#1a1a1a}
+.action-menu-item{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:14px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;color:#1a1a1a}
 .action-menu-item:hover{background:#f7f9fb}
 .action-menu-item.danger{color:#A32D2D}
 .action-menu-item.danger:hover{background:#FEE2E2}
@@ -580,7 +577,7 @@ function selectDay(iso){
 }
 document.addEventListener('click',function(e){
   const f=document.getElementById('date-field');if(f&&!f.contains(e.target))document.getElementById('cal-popup').classList.remove('open');
-  if(!e.target.closest('.action-menu'))document.querySelectorAll('.action-menu-popup').forEach(p=>p.classList.remove('open'));
+
 });
 function initCal(){calDate=new Date(new Date().getFullYear(),new Date().getMonth(),1);selectDay(new Date().toISOString().split('T')[0]);}
 function formatDateInput(el){let v=el.value.replace(/\D/g,'');if(v.length>6)v=v.slice(0,6);if(v.length>4)v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);else if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);el.value=v;}
@@ -781,35 +778,37 @@ function renderTx(){
       <td>${t.subtipo?`<span class="badge badge-${t.subtipo==='Fijo'?'fijo':'var'}">${t.subtipo}</span>`:''}</td>
       <td style="text-align:right;font-weight:500;color:${t.tipo==='ingreso'?'#1A5276':t.tipo==='ahorro'?'#1D6A39':'#6E2C00'};white-space:nowrap">${t.tipo==='ingreso'?'+':'-'}${fmt(t.monto)}</td>
       <td>
-        <div class="action-menu">
-          <button class="btn-sm" onclick="toggleActionMenu(event,${t.id})" style="display:flex;align-items:center;gap:4px"><i class="ti ti-pencil" style="font-size:13px"></i> Editar</button>
-          <div class="action-menu-popup" id="menu-${t.id}">
-            <button class="action-menu-item" onclick="openEdit(${t.id})"><i class="ti ti-pencil"></i> Editar</button>
-            <button class="action-menu-item danger" onclick="deleteTx(${t.id})"><i class="ti ti-trash"></i> Eliminar</button>
-          </div>
-        </div>
+        <button class="btn-sm" onclick="toggleActionMenu(event,${t.id})" style="display:flex;align-items:center;gap:4px"><i class="ti ti-pencil" style="font-size:13px"></i> Editar</button>
       </td>
     </tr>`;
   }).join('');
 }
 
+let activeMenuId=null;
 function toggleActionMenu(e,id){
   e.stopPropagation();
-  const menu=document.getElementById(`menu-${id}`);
-  document.querySelectorAll('.action-menu-popup').forEach(p=>{if(p!==menu)p.classList.remove('open');});
-  if(!menu.classList.contains('open')){
-    const btn=e.currentTarget;
-    const rect=btn.getBoundingClientRect();
-    const menuW=150;
-    let left=rect.right-menuW+window.scrollX;
-    if(left<8) left=8;
-    if(left+menuW>window.innerWidth-8) left=window.innerWidth-menuW-8;
-    menu.style.top=(rect.bottom+4+window.scrollY)+'px';
-    menu.style.left=left+'px';
-    menu.style.width=menuW+'px';
+  const menu=document.getElementById('global-action-menu');
+  if(activeMenuId===id && menu.style.display!=='none'){
+    menu.style.display='none';activeMenuId=null;return;
   }
-  menu.classList.toggle('open');
+  activeMenuId=id;
+  const btn=e.currentTarget;
+  const rect=btn.getBoundingClientRect();
+  const menuW=150;
+  let left=rect.right-menuW;
+  if(left<8) left=8;
+  if(left+menuW>window.innerWidth-8) left=window.innerWidth-menuW-8;
+  let top=rect.bottom+4;
+  if(top+80>window.innerHeight) top=rect.top-84;
+  menu.style.top=top+'px';
+  menu.style.left=left+'px';
+  menu.style.display='block';
+  document.getElementById('global-menu-edit').onclick=()=>{menu.style.display='none';activeMenuId=null;openEdit(id);};
+  document.getElementById('global-menu-delete').onclick=()=>{menu.style.display='none';activeMenuId=null;deleteTx(id);};
 }
+document.addEventListener('click',function(){
+  document.getElementById('global-action-menu').style.display='none';activeMenuId=null;
+});
 
 function deleteTx(id){
   if(!confirm('¿Eliminar este movimiento?'))return;
@@ -1149,5 +1148,11 @@ function init(){
 }
 init();
 </script>
+
+<!-- Global action menu popup -->
+<div id="global-action-menu" style="display:none;position:fixed;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:999;min-width:150px;overflow:hidden">
+  <button class="action-menu-item" id="global-menu-edit"><i class="ti ti-pencil"></i> Editar</button>
+  <button class="action-menu-item danger" id="global-menu-delete"><i class="ti ti-trash"></i> Eliminar</button>
+</div>
 </body>
 </html>
