@@ -530,12 +530,22 @@ function abrirMes(){
 function getAutoMonth(isoDate){
   if(!isoDate) return currentMonth();
   const cm=getClosedMonths();
+  // Find the closed month whose close date is <= isoDate (meaning isoDate is on or after close)
+  // Pick the most recent close date that applies
+  let bestMonth=null, bestCloseISO='';
   for(const [month, closeISO] of Object.entries(cm)){
-    if(typeof closeISO==='string' && isoDate>closeISO){
-      const idx=MONTHS.indexOf(month);
-      if(idx>-1) return MONTHS[(idx+1)%12];
+    if(typeof closeISO==='string' && isoDate>=closeISO){
+      if(closeISO>=bestCloseISO){
+        bestCloseISO=closeISO;
+        bestMonth=month;
+      }
     }
   }
+  if(bestMonth){
+    const idx=MONTHS.indexOf(bestMonth);
+    if(idx>-1) return MONTHS[(idx+1)%12];
+  }
+  // Default: use calendar month of the date
   return MONTHS[parseInt(isoDate.split('-')[1])-1];
 }
 
