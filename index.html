@@ -800,8 +800,13 @@ function toggleActionMenu(e,id){
   if(!menu.classList.contains('open')){
     const btn=e.currentTarget;
     const rect=btn.getBoundingClientRect();
-    menu.style.top=(rect.bottom+6+window.scrollY)+'px';
-    menu.style.left=Math.max(8,rect.right-140+window.scrollX)+'px';
+    const menuW=150;
+    let left=rect.right-menuW+window.scrollX;
+    if(left<8) left=8;
+    if(left+menuW>window.innerWidth-8) left=window.innerWidth-menuW-8;
+    menu.style.top=(rect.bottom+4+window.scrollY)+'px';
+    menu.style.left=left+'px';
+    menu.style.width=menuW+'px';
   }
   menu.classList.toggle('open');
 }
